@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'call/video_call_screen.dart';
-import 'wallet/wallet_screen.dart';
-import 'support_screen.dart';
+import 'package:priomeet_app/screens/call/video_call_screen.dart';
+import 'package:priomeet_app/screens/wallet/wallet_screen.dart';
+import 'package:priomeet_app/screens/support_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
