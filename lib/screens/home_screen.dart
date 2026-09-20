@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'video_call_screen.dart';
-import 'wallet_screen.dart';
+import 'call/video_call_screen.dart';
+import 'wallet/wallet_screen.dart';
 import 'support_screen.dart';
 
 class HomeScreen extends StatefulWidget {
