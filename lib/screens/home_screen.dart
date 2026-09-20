@@ -448,7 +448,7 @@ class LumiProfileTab extends StatelessWidget {
                     const SizedBox(height: 12),
                     const Text('মিরাজ (অ্যাডমিন)', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    const Text('আইডি: 5330021607 • বাংলাদেশ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    const Text('আইডি: ' + AppUserSession.userId + ' • ' + (AppUserSession.isGuest ? 'গেস্ট মোড' : 'ভেরিফাইড'), style: TextStyle(color: Colors.white54, fontSize: 12)),
                   ],
                 ),
               ),
