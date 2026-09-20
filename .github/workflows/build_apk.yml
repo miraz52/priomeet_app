@@ -30,43 +30,19 @@ jobs:
           rm -rf android
           flutter create . --org com.priomeet --project-name priomeet_app --platforms android
 
-      - name: Configure Hardware Permissions
+      - name: Add Permissions to Official Manifest
         run: |
-          cat << 'MANIFEST' > android/app/src/main/AndroidManifest.xml
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <uses-permission android:name="android.permission.CAMERA"/>
-              <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-              <uses-permission android:name="android.permission.BLUETOOTH"/>
-              <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
-              <application
-                  android:label="PrioMeet"
-                  android:name="\${applicationName}"
-                  android:icon="@mipmap/ic_launcher">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTop"
-                      android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-                      android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize">
-                      <meta-data
-                        android:name="io.flutter.embedding.android.NormalTheme"
-                        android:resource="@style/NormalTheme" />
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-                  <meta-data
-                      android:name="flutterEmbedding"
-                      android:value="2" />
-              </application>
-          </manifest>
-          MANIFEST
+          # অফিশিয়াল মেনিফেস্টের ভেতর পারমিশন ইনজেক্ট করা (কোনো ফাইল ডিলিট বা রিসোর্স মিসিং ছাড়া)
+          sed -i '/<application/i \
+    <uses-permission android:name="android.permission.INTERNET"/>\
+    <uses-permission android:name="android.permission.CAMERA"/>\
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>\
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\
+    <uses-permission android:name="android.permission.BLUETOOTH"/>\
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>\
+    <uses-feature android:name="android.hardware.camera"/>\
+    <uses-feature android:name="android.hardware.camera.autofocus"/>' android/app/src/main/AndroidManifest.xml
 
       - name: Set Min SDK for Agora
         run: |
