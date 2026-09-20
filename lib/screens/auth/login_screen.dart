@@ -1,3 +1,4 @@
+import 'package:priomeet_app/user_session.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:priomeet_app/screens/auth/profile_setup_screen.dart';

@@ -1,3 +1,5 @@
+import 'package:priomeet_app/user_session.dart';
+import 'package:priomeet_app/user_session.dart';
 import 'package:flutter/material.dart';
 import 'package:priomeet_app/screens/auth/login_screen.dart';
 import 'package:priomeet_app/screens/call/video_call_screen.dart';
@@ -7,18 +9,7 @@ import 'package:priomeet_app/screens/vip/vip_screen.dart';
 import 'package:priomeet_app/screens/chat/chat_detail_screen.dart';
 import 'package:priomeet_app/screens/wallet/host_earnings_screen.dart';
 
-class AppUserSession {
-  static String userId = "User_849201";
-  static String userName = "Prio User";
-  static bool isGuest = true;
-  static String gender = "male"; // 'male' or 'female'
-  static bool isHost = false;
-  static bool isVip = false;
-  static String vipType = "ফ্রি ইউজার";
-  static int coins = 15; // ওয়েলকাম বোনাস
-  static int freeMatchesLeft = 5; // ওয়েলকাম ফ্রি ম্যাচ কার্ড
-  static int completedCallsCount = 0;
-}
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -240,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: GridView.builder(
-                gridDelegate: const dynamicDelegate(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.85),
                 itemCount: hosts.length,
                 itemBuilder: (context, i) {
                   final h = hosts[i];
@@ -494,17 +485,3 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class dynamicDelegate extends SliverGridDelegate {
-  const dynamicDelegate();
-  @override
-  SliverGridLayout getLayout(SliverConstraints constraints) {
-    return SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 0.85,
-    ).getLayout(constraints);
-  }
-  @override
-  bool shouldRelayout(covariant SliverGridDelegate oldDelegate) => false;
-}
