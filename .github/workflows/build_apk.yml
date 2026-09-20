@@ -1,4 +1,4 @@
-name: Build Release APK
+name: Build APK
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -11,11 +11,10 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
           channel: 'stable'
       - run: flutter pub get
-      - run: flutter build apk --release --no-sound-null-safety || flutter build apk --release
+      - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: PrioMeet-Release-APK
+          name: PrioMeet-APK
           path: build/app/outputs/flutter-apk/app-release.apk
