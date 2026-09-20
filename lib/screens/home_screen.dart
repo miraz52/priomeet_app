@@ -1,7 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:priomeet_app/screens/auth/login_screen.dart';
 import 'package:priomeet_app/screens/call/video_call_screen.dart';
 import 'package:priomeet_app/screens/wallet/wallet_screen.dart';
 import 'package:priomeet_app/screens/support_screen.dart';
+import 'package:priomeet_app/screens/vip/vip_screen.dart';
+import 'package:priomeet_app/screens/chat/chat_detail_screen.dart';
+import 'package:priomeet_app/screens/wallet/host_earnings_screen.dart';
+
+class AppUserSession {
+  static String userId = "User_849201";
+  static String userName = "Prio User";
+  static bool isGuest = true;
+  static String gender = "male"; // 'male' or 'female'
+  static bool isHost = false;
+  static bool isVip = false;
+  static String vipType = "ফ্রি ইউজার";
+  static int coins = 15; // ওয়েলকাম বোনাস
+  static int freeMatchesLeft = 5; // ওয়েলকাম ফ্রি ম্যাচ কার্ড
+  static int completedCallsCount = 0;
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,25 +30,39 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const LumiMatchTab(),
-    const LumiLiveTab(),
-    const LumiMessageTab(),
-    const LumiProfileTab(),
-  ];
+  void _refresh() {
+    setState(() {});
+  }
+
+  void _startLiveMatch() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (c) => VideoCallScreen(
+          channelName: "prio_match_${DateTime.now().millisecondsSinceEpoch}",
+          remoteUserName: "মাহিরা জাহান",
+          remoteUserRole: "অনলাইন হট হোস্ট 🔥",
+        ),
+      ),
+    ).then((_) => _refresh());
+  }
 
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      _buildMatchTab(),
+      _buildDiscoverTab(),
+      _buildMessageTab(),
+      _buildProfileTab(),
+    ];
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0A1A),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      backgroundColor: const Color(0xFF0B0818),
+      body: screens[_currentIndex],
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF16122B),
-          border: Border(top: BorderSide(color: Colors.white.withOpacity(0.08))),
+        decoration: const BoxDecoration(
+          color: Color(0xFF140F27),
+          border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
@@ -44,161 +75,226 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedFontSize: 11,
           unselectedFontSize: 11,
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.flash_on_rounded),
-              activeIcon: Icon(Icons.flash_on_rounded, color: Color(0xFFFF2A85), size: 28),
-              label: 'ম্যাচ',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.videocam_outlined),
-              activeIcon: Icon(Icons.videocam_rounded, color: Color(0xFFFF2A85), size: 28),
-              label: 'লাইভ',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_outline_rounded),
-              activeIcon: Icon(Icons.chat_bubble_rounded, color: Color(0xFFFF2A85), size: 28),
-              label: 'মেসেজ',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              activeIcon: Icon(Icons.person_rounded, color: Color(0xFFFF2A85), size: 28),
-              label: 'প্রোফাইল',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.flash_on_rounded), label: 'ম্যাচিং'),
+            BottomNavigationBarItem(icon: Icon(Icons.explore_rounded), label: 'ডিসকভার'),
+            BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_rounded), label: 'মেসেজ'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'প্রোফাইল'),
           ],
         ),
       ),
     );
   }
-}
 
-/* =========================================================================
-   ট্যাব ১: Lumi রিয়েল-টাইম রাডার ও ১:১ ম্যাচ (1-on-1 Instant Match Tab)
-========================================================================= */
-class LumiMatchTab extends StatelessWidget {
-  const LumiMatchTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment(0, -0.2),
-          radius: 1.2,
-          colors: [Color(0xFF2A164D), Color(0xFF0D0A1A)],
-        ),
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // টপ বার
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.favorite_rounded, color: Color(0xFFFF2A85), size: 26),
-                      SizedBox(width: 8),
-                      Text('Lumi Match', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                    ],
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const WalletScreen())),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFFFF8A00), Color(0xFFFF3D00)]),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.monetization_on, color: Colors.white, size: 16),
-                          SizedBox(width: 4),
-                          Text('১৫ কয়েন', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                        ],
-                      ),
+  // ১. ম্যাচ ট্যাব (পালসিং রাডার)
+  Widget _buildMatchTab() {
+    return SafeArea(
+      child: Column(
+        children: [
+          // টপ বার ও কয়েন ইন্ডিকেটর
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.videocam_rounded, color: Color(0xFFFF2A85), size: 28),
+                    const SizedBox(width: 8),
+                    const Text('PrioMeet', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                  ],
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const WalletScreen())).then((_) => _refresh()),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFFFF2A85), Color(0xFF8E00FF)]),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.monetization_on, color: Colors.amberAccent, size: 16),
+                        const SizedBox(width: 4),
+                        Text('${AppUserSession.coins} কয়েন', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
 
-            const Spacer(),
+          // ওয়েলকাম বোনাস ব্যানার ব্যাজ
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.amber.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.amber.withOpacity(0.4)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.card_giftcard_rounded, color: Colors.amberAccent, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '🎁 ওয়েলকাম গিফট: +${AppUserSession.coins} কয়েন ও ${AppUserSession.freeMatchesLeft}টি ফ্রি ম্যাচ সক্রিয়!',
+                    style: const TextStyle(color: Colors.amberAccent, fontSize: 11.5, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
 
-            // রাডার পালসিং সার্কেল
-            Center(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 250,
-                    height: 250,
+          const Spacer(),
+
+          // সেন্ট্রাল রাডার অ্যানিমেশন ও স্টার্ট বাটন
+          Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 240,
+                  height: 240,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFFF2A85).withOpacity(0.2), width: 2),
+                  ),
+                ),
+                Container(
+                  width: 180,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFFF2A85).withOpacity(0.4), width: 2),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _startLiveMatch,
+                  child: Container(
+                    width: 120,
+                    height: 120,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFFF2A85).withOpacity(0.2), width: 2),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF2A85), Color(0xFF8E00FF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF2A85).withOpacity(0.6),
+                          blurRadius: 30,
+                          spreadRadius: 6,
+                        ),
+                      ],
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.video_call_rounded, color: Colors.white, size: 42),
+                        SizedBox(height: 2),
+                        Text('START', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.5)),
+                      ],
                     ),
                   ),
-                  Container(
-                    width: 190,
-                    height: 190,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFFF2A85).withOpacity(0.4), width: 2),
-                    ),
-                  ),
-                  GestureDetector(
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            '১-ক্লিকে রেন্ডম হোস্টের সাথে লাইভ কানেক্ট হোন',
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'ফ্রি ম্যাচ কার্ড বাকি: ${AppUserSession.freeMatchesLeft} টি',
+            style: const TextStyle(color: Color(0xFFFF2A85), fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+
+          const Spacer(),
+        ],
+      ),
+    );
+  }
+
+  // ২. ডিসকভার ট্যাব
+  Widget _buildDiscoverTab() {
+    final hosts = [
+      {'name': 'নুসরাত জাহান', 'age': '21', 'tag': 'মিষ্টি আড্ডা 🥰', 'color': Colors.pinkAccent},
+      {'name': 'তানিশা আহমেদ', 'age': '23', 'tag': 'লেট নাইট টক 🌙', 'color': Colors.purpleAccent},
+      {'name': 'আয়েশা আক্তার', 'age': '20', 'tag': 'ফ্রেন্ডলি হোস্ট 🌸', 'color': Colors.deepOrangeAccent},
+      {'name': 'সাদিয়া ইসলাম', 'age': '22', 'tag': 'ভিআইপি স্পেশাল 💎', 'color': Colors.blueAccent},
+    ];
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('অনলাইন হট হোস্টস 🔥', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Expanded(
+              child: GridView.builder(
+                gridDelegate: const dynamicDelegate(),
+                itemCount: hosts.length,
+                itemBuilder: (context, i) {
+                  final h = hosts[i];
+                  return GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (c) => const VideoCallScreen(hostName: 'র্যান্ডম লাইভ পার্টনার')),
-                      );
+                        MaterialPageRoute(
+                          builder: (c) => VideoCallScreen(
+                            channelName: "prio_host_$i",
+                            remoteUserName: h['name'] as String,
+                            remoteUserRole: h['tag'] as String,
+                          ),
+                        ),
+                      ).then((_) => _refresh());
                     },
                     child: Container(
-                      width: 130,
-                      height: 130,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFFFF2A85), Color(0xFF9D00FF)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(color: Color(0xFFFF2A85), blurRadius: 25, spreadRadius: 3),
-                        ],
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF160F2A),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white12),
                       ),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Stack(
                         children: [
-                          Icon(Icons.videocam_rounded, color: Colors.white, size: 40),
-                          SizedBox(height: 4),
-                          Text('START', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.5)),
+                          Center(
+                            child: Icon(Icons.face_3, size: 70, color: (h['color'] as Color).withOpacity(0.7)),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(10)),
+                              child: const Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 10,
+                            left: 10,
+                            right: 10,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${h['name']}, ${h['age']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                const SizedBox(height: 2),
+                                Text(h['tag'] as String, style: const TextStyle(color: Colors.white60, fontSize: 10)),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 25),
-            const Text('১-অন-১ লাইভ ভিডিও ম্যাচ শুরু করুন', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            const Text('প্রতি মিনিটে ৩ কয়েন • সম্পূর্ণ নিরাপদ ও ব্যক্তিগত', style: TextStyle(color: Colors.white54, fontSize: 12)),
-
-            const Spacer(),
-
-            // কুইক ফিল্টার বাটন (Lumi Style)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _matchOption(Icons.female_rounded, 'মেয়েদের সাথে', true),
-                  _matchOption(Icons.all_inclusive_rounded, 'সবার সাথে', false),
-                  _matchOption(Icons.location_on_rounded, 'বাংলাদেশ', false),
-                ],
+                  );
+                },
               ),
             ),
           ],
@@ -207,321 +303,208 @@ class LumiMatchTab extends StatelessWidget {
     );
   }
 
-  static Widget _matchOption(IconData icon, String title, bool active) {
+  // ৩. মেসেজ ট্যাব
+  Widget _buildMessageTab() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('মেসেঞ্জার 💌', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (c) => const ChatDetailScreen(hostName: 'নুসরাত জাহান', messageCost: 2)),
+                ).then((_) => _refresh());
+              },
+              child: _chatRow('নুসরাত জাহান', 'হাই সুইটহার্ট! ফ্রি থাকলে ভিডিও কল দিও 🥰', '২ মি. আগে', true),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (c) => const ChatDetailScreen(hostName: 'তানিশা আহমেদ', messageCost: 1)),
+                ).then((_) => _refresh());
+              },
+              child: _chatRow('তানিশা আহমেদ', 'তোমার সাথে আড্ডা দিয়ে খুব ভালো লাগলো!', '১ ঘণ্টা আগে', false),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chatRow(String name, String msg, String time, bool unread) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: active ? const Color(0xFFFF2A85).withOpacity(0.25) : Colors.white.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: active ? const Color(0xFFFF2A85) : Colors.transparent),
+        color: const Color(0xFF160F2A),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: active ? const Color(0xFFFF2A85) : Colors.white70, size: 16),
-          const SizedBox(width: 6),
-          Text(title, style: TextStyle(color: active ? Colors.white : Colors.white70, fontSize: 12)),
+          CircleAvatar(
+            backgroundColor: const Color(0xFFFF2A85).withOpacity(0.2),
+            child: const Icon(Icons.face_3, color: Color(0xFFFF2A85)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 4),
+                Text(msg, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(time, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+              if (unread) ...[
+                const SizedBox(height: 4),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(color: Color(0xFFFF2A85), shape: BoxShape.circle),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
   }
-}
 
-/* =========================================================================
-   ট্যাব ২: Lumi লাইভ হোস্ট ও গ্রিড (Live Stream Tab)
-========================================================================= */
-class LumiLiveTab extends StatelessWidget {
-  const LumiLiveTab({super.key});
-
-  final List<Map<String, dynamic>> hosts = const [
-    {
-      'name': 'নুসরাত জাহান',
-      'age': '21',
-      'location': 'ঢাকা',
-      'image': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600',
-      'tag': 'মিষ্টি আড্ডা 🌸',
-    },
-    {
-      'name': 'প্রিয়া দাস',
-      'age': '20',
-      'location': 'চট্টগ্রাম',
-      'image': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600',
-      'tag': 'গান আর বন্ধুত্ব ✨',
-    },
-    {
-      'name': 'তানিয়া চৌধুরী',
-      'age': '22',
-      'location': 'সিলেট',
-      'image': 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600',
-      'tag': 'লেট নাইট টক 🌙',
-    },
-    {
-      'name': 'মেহজাবিন মিলি',
-      'age': '19',
-      'location': 'রাজশাহী',
-      'image': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600',
-      'tag': 'নতুন বন্ধু চাই 💖',
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0A1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF16122B),
-        title: const Text('লাইভ হোস্ট রুম', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        elevation: 0,
-      ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.75,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-        ),
-        itemCount: hosts.length,
-        itemBuilder: (context, i) {
-          final h = hosts[i];
-          return GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => VideoCallScreen(hostName: h['name']))),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Stack(
-                fit: StackFit.expand,
+  // ৪. প্রোফাইল ট্যাব
+  Widget _buildProfileTab() {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // ইউজার হেডার কার্ড
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF160F2A),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Row(
                 children: [
-                  Image.network(h['image'], fit: BoxFit.cover),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black.withOpacity(0.85)],
-                      ),
-                    ),
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: const Color(0xFFFF2A85),
+                    child: Icon(AppUserSession.gender == 'female' ? Icons.face_3 : Icons.face, color: Colors.white, size: 36),
                   ),
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF2A85),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Row(
-                        children: [
-                          CircleAvatar(radius: 3, backgroundColor: Colors.white),
-                          SizedBox(width: 4),
-                          Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 10,
-                    left: 10,
-                    right: 10,
+                  const SizedBox(width: 14),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("${h['name']}, ${h['age']}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text(h['tag'], style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                        Text(AppUserSession.userName, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text('আইডি: ${AppUserSession.userId} • ${AppUserSession.gender == 'female' ? 'হোস্ট মোড' : 'ইউজার মোড'}', style: const TextStyle(color: Colors.white54, fontSize: 11)),
                       ],
                     ),
                   ),
-                  Positioned(
-                    bottom: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFFFF2A85),
-                      ),
-                      child: const Icon(Icons.videocam_rounded, color: Colors.white, size: 16),
-                    ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.amber.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                    child: Text(AppUserSession.vipType, style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
-}
 
-/* =========================================================================
-   ট্যাব ৩: Lumi মেসেঞ্জার ও চ্যাট (Messages Tab)
-========================================================================= */
-class LumiMessageTab extends StatelessWidget {
-  const LumiMessageTab({super.key});
+            const SizedBox(height: 16),
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0A1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF16122B),
-        title: const Text('মেসেজ ও নোটিফিকেশন', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        elevation: 0,
-      ),
-      body: ListView(
-        children: [
-          ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: Color(0xFFFF2A85),
-              child: Icon(Icons.support_agent, color: Colors.white),
+            // ভিআইপি ব্যানার
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFF5E3902), Color(0xFF2B1902)]),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFFD700), width: 1.2),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('LUMI VIP CLUB 👑', style: TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.w900, fontSize: 14)),
+                      SizedBox(height: 4),
+                      Text('সাপ্তাহিক ও মাসিক পাস আনলক করুন', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                    ],
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const VipScreen())).then((_) => _refresh()),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFD700), foregroundColor: Colors.black),
+                    child: const Text('ভিআইপি কিনুন', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  ),
+                ],
+              ),
             ),
-            title: const Text('PrioMeet অফিসিয়াল সাপোর্ট', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            subtitle: const Text('যেকোনো সমস্যা জানাতে এখানে মেসেজ দিন...', style: TextStyle(color: Colors.white54, fontSize: 12)),
-            trailing: const Icon(Icons.chevron_right, color: Colors.white30),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const SupportScreen())),
-          ),
-          const Divider(color: Colors.white10),
-          _chatItem('নুসরাত জাহান', 'হাই! কল দিচ্ছ না কেন? 🥰', '২ মি. আগে', true),
-          _chatItem('প্রিয়া দাস', 'ধন্যবাদ গিফটের জন্য ❤️', '১০ মি. আগে', false),
-          _chatItem('সিস্টেম নোটিশ', 'নতুন ইউজার বোনাস হিসেবে ১৫টি ফ্রি কয়েন যোগ হয়েছে!', '১ ঘণ্টা আগে', false),
-        ],
-      ),
-    );
-  }
 
-  Widget _chatItem(String name, String lastMsg, String time, bool unread) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Colors.purple.shade800,
-        child: Text(name[0], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
-      title: Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      subtitle: Text(lastMsg, style: TextStyle(color: unread ? Colors.pinkAccent : Colors.white54, fontSize: 12)),
-      trailing: Text(time, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-    );
-  }
-}
+            const SizedBox(height: 16),
 
-/* =========================================================================
-   ট্যাব ৪: Lumi ইউজার প্রোফাইল ও সেটিংস (Profile/Me Tab)
-========================================================================= */
-class LumiProfileTab extends StatelessWidget {
-  const LumiProfileTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0A1A),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              // প্রোফাইল কার্ড
-              Center(
-                child: Column(
-                  children: [
-                    Stack(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(colors: [Color(0xFFFF2A85), Colors.purpleAccent]),
-                          ),
-                          child: const CircleAvatar(
-                            radius: 45,
-                            backgroundColor: Color(0xFF281E57),
-                            child: Icon(Icons.person, size: 50, color: Colors.white70),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(color: Color(0xFFFF2A85), shape: BoxShape.circle),
-                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    const Text('মিরাজ (অ্যাডমিন)', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    const Text('আইডি: ' + AppUserSession.userId + ' • ' + (AppUserSession.isGuest ? 'গেস্ট মোড' : 'ভেরিফাইড'), style: TextStyle(color: Colors.white54, fontSize: 12)),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // ওয়ালেট কুইক কার্ড
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFF2E1A54), Color(0xFF1E133A)]),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.pinkAccent.withOpacity(0.3)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('আমার কয়েন ব্যালেন্স', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.monetization_on, color: Colors.amber, size: 20),
-                            SizedBox(width: 6),
-                            Text('১৫ কয়েন', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const WalletScreen())),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF2A85),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      ),
-                      child: const Text('রিচার্জ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // মেনু অপশনস
-              _profileOption(Icons.wallet, 'ওয়ালেট ও পেমেন্ট (বিকাশ/নগদ)', () {
-                Navigator.push(context, MaterialPageRoute(builder: (c) => const WalletScreen()));
+            // মেনু অপশনসমূহ
+            if (AppUserSession.gender == 'female' || AppUserSession.isHost) ...[
+              _menuItem(Icons.diamond_rounded, 'হোস্ট ইনকাম ও ক্যাশআউট সেন্টার 💎', () {
+                Navigator.push(context, MaterialPageRoute(builder: (c) => const HostEarningsScreen())).then((_) => _refresh());
               }),
-              _profileOption(Icons.support_agent, 'সরাসরি অ্যাডমিন হেল্পলাইন', () {
-                Navigator.push(context, MaterialPageRoute(builder: (c) => const SupportScreen()));
-              }),
-              _profileOption(Icons.privacy_tip, 'গোপনীয়তা ও নিরাপত্তা', () {}),
             ],
-          ),
+
+            _menuItem(Icons.account_balance_wallet_rounded, 'ওয়ালেট ও বিকাশ/নগদ কয়েন রিচার্জ', () {
+              Navigator.push(context, MaterialPageRoute(builder: (c) => const WalletScreen())).then((_) => _refresh());
+            }),
+
+            _menuItem(Icons.support_agent_rounded, '২৪/৭ অফিসিয়াল লাইভ সাপোর্ট ও হেল্পডেস্ক', () {
+              Navigator.push(context, MaterialPageRoute(builder: (c) => const SupportScreen()));
+            }),
+
+            _menuItem(Icons.logout_rounded, 'লগআউট (Logout)', () {
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (c) => const LoginScreen()), (route) => false);
+            }),
+          ],
         ),
       ),
     );
   }
 
-  static Widget _profileOption(IconData icon, String title, VoidCallback onTap) {
+  Widget _menuItem(IconData icon, String title, VoidCallback onTap) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF16122B),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(color: const Color(0xFF160F2A), borderRadius: BorderRadius.circular(14)),
       child: ListTile(
         leading: Icon(icon, color: const Color(0xFFFF2A85)),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
-        trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+        title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 13.5)),
+        trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 14),
         onTap: onTap,
       ),
     );
   }
+}
+
+class dynamicDelegate extends SliverGridDelegate {
+  const dynamicDelegate();
+  @override
+  SliverGridLayout getLayout(SliverConstraints constraints) {
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 0.85,
+    ).getLayout(constraints);
+  }
+  @override
+  bool shouldRelayout(covariant SliverGridDelegate oldDelegate) => false;
 }

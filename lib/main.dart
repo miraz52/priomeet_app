@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:priomeet_app/screens/auth/login_screen.dart';
+import 'package:priomeet_app/screens/auth/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +26,7 @@ class PrioMeetApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF0B0818),
         primaryColor: const Color(0xFFFF2A85),
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }

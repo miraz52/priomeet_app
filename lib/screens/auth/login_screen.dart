@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:priomeet_app/screens/home_screen.dart';
+import 'package:priomeet_app/screens/auth/profile_setup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,19 +14,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _loginAsGuest() {
     setState(() => _isLoading = true);
-    
-    // অটো গেস্ট প্রোফাইল জেনারেট
     final randomId = (100000 + Random().nextInt(900000)).toString();
-    AppUserSession.userId = "Prio_$randomId";
-    AppUserSession.userName = "Guest User";
+    AppUserSession.userId = "Guest_$randomId";
+    AppUserSession.userName = "Prio Guest";
     AppUserSession.isGuest = true;
-    
-    Future.delayed(const Duration(milliseconds: 600), () {
+
+    Future.delayed(const Duration(milliseconds: 700), () {
       if (!mounted) return;
       setState(() => _isLoading = false);
+      // লগইন সফল হলে পরবর্তী স্ক্রিনে যাওয়া
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (c) => const HomeScreen()),
+        MaterialPageRoute(builder: (c) => const ProfileSetupScreen()),
+      );
+    });
+  }
+
+  void _loginWithGoogle() {
+    setState(() => _isLoading = true);
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      AppUserSession.userId = "User_${Random().nextInt(99999)}";
+      AppUserSession.userName = "Google Verified";
+      AppUserSession.isGuest = false;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (c) => const ProfileSetupScreen()),
       );
     });
   }
@@ -36,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF191230),
+      backgroundColor: const Color(0xFF160F2A),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
@@ -51,14 +66,23 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'ফোন নম্বর দিয়ে লগইন',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'মোবাইল নম্বর দিয়ে সাইন ইন',
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  icon: const Icon(Icons.close, color: Colors.white54),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             const Text(
-              'আপনার ১১ ডিজিটের মোবাইল নম্বরটি লিখুন:',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              'আপনার ১১ ডিজিটের পার্সোনাল নম্বরটি লিখুন:',
+              style: TextStyle(color: Colors.white60, fontSize: 12),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -66,12 +90,12 @@ class _LoginScreenState extends State<LoginScreen> {
               keyboardType: TextInputType.phone,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.phone_android, color: Color(0xFFFF2A85)),
-                hintText: '017XXXXXXXX',
-                hintStyle: const TextStyle(color: Colors.white38),
+                prefixIcon: const Icon(Icons.phone_android_rounded, color: Color(0xFFFF2A85)),
+                hintText: '01XXXXXXXXX',
+                hintStyle: const TextStyle(color: Colors.white30),
                 filled: true,
                 fillColor: Colors.white.withOpacity(0.06),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
               ),
             ),
             const SizedBox(height: 20),
@@ -82,24 +106,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   if (phoneController.text.trim().length < 11) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('সঠিক মোবাইল নম্বর লিখুন!')),
+                      const SnackBar(content: Text('সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন!')),
                     );
                     return;
                   }
                   Navigator.pop(ctx);
                   AppUserSession.userId = phoneController.text.trim();
-                  AppUserSession.userName = "Prio User";
+                  AppUserSession.userName = "Mobile User";
                   AppUserSession.isGuest = false;
+
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (c) => const HomeScreen()),
+                    MaterialPageRoute(builder: (c) => const ProfileSetupScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF2A85),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('লগইন / ওটিপি পাঠান', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                child: const Text('লগইন নিশ্চিত করুন', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
               ),
             ),
           ],
@@ -115,116 +140,130 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ব্যাকগ্রাউন্ড নিয়ন গ্লো
+          // প্রিমিয়াম ব্যাকগ্রাউন্ড
           Container(
             decoration: const BoxDecoration(
               gradient: RadialGradient(
                 center: Alignment(0, -0.4),
-                radius: 1.2,
-                colors: [Color(0xFF3B1556), Color(0xFF0B0818)],
+                radius: 1.3,
+                colors: [Color(0xFF381552), Color(0xFF0B0818)],
               ),
             ),
           ),
-
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Spacer(),
-
-                  // প্রিমিয়াম লোগো ও ব্র্যান্ডিং
+                  // লোগো ও প্রিমিয়াম ব্যানার
                   Container(
-                    width: 100,
-                    height: 100,
+                    width: 90,
+                    height: 90,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF2A85), Color(0xFF8E00FF)],
-                      ),
+                      gradient: const LinearGradient(colors: [Color(0xFFFF2A85), Color(0xFF8E00FF)]),
                       boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF2A85).withOpacity(0.5),
-                          blurRadius: 30,
-                          spreadRadius: 5,
-                        ),
+                        BoxShadow(color: const Color(0xFFFF2A85).withOpacity(0.5), blurRadius: 30, spreadRadius: 4),
                       ],
                     ),
-                    child: const Icon(Icons.videocam_rounded, color: Colors.white, size: 54),
+                    child: const Icon(Icons.videocam_rounded, color: Colors.white, size: 48),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   const Text(
                     'PrioMeet',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.5,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900, letterSpacing: 1.5),
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    '১-অন-১ রিয়েল-টাইম ভিডিও ডেটিং ও চ্যাট',
-                    style: TextStyle(color: Colors.white60, fontSize: 14),
+                    '১-অন-১ লাইভ ভিডিও ডেটিং ও প্রাইভেসির নিরাপদ অভিজ্ঞতা',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white60, fontSize: 12),
                   ),
-
                   const Spacer(),
 
-                  // ১. গেস্ট লগইন বাটন (লুমির মূল সাইকোলজি)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _loginAsGuest,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF2A85),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-                        elevation: 6,
-                        shadowColor: const Color(0xFFFF2A85).withOpacity(0.5),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.flash_on_rounded, color: Colors.white),
-                                SizedBox(width: 8),
-                                Text('গেস্ট হিসেবে প্রবেশ (Quick Guest)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                              ],
-                            ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // ২. ফোন নম্বর লগইন
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: OutlinedButton(
-                      onPressed: _showPhoneLoginDialog,
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.white24, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-                        backgroundColor: Colors.white.withOpacity(0.04),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.phone, color: Colors.white70, size: 20),
-                          SizedBox(width: 8),
-                          Text('মোবাইল নম্বর দিয়ে লগইন', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                        ],
+                  if (_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(color: Color(0xFFFF2A85)),
+                    )
+                  else ...[
+                    // ১. গুগল সাইন-ইন বাটন
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _loginWithGoogle,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black87,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          elevation: 3,
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.g_mobiledata_rounded, size: 30, color: Colors.red),
+                            SizedBox(width: 6),
+                            Text('Google দিয়ে সাইন ইন করুন', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+
+                    // ২. ফোন নম্বর লগইন বাটন
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton(
+                        onPressed: _showPhoneLoginDialog,
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white24, width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          backgroundColor: Colors.white.withOpacity(0.04),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.phone_iphone_rounded, color: Colors.white70, size: 20),
+                            SizedBox(width: 8),
+                            Text('মোবাইল নম্বর দিয়ে সাইন ইন', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ৩. কুইক গেস্ট লগইন (লুমির সিগনেচার বাটন)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _loginAsGuest,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF2A85),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          elevation: 6,
+                          shadowColor: const Color(0xFFFF2A85).withOpacity(0.5),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.flash_on_rounded, color: Colors.white),
+                            SizedBox(width: 6),
+                            Text('গেস্ট হিসেবে প্রবেশ (Quick Guest)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 24),
                   const Text(
-                    'প্রবেশ করার মাধ্যমে আপনি আমাদের টার্মস ও প্রাইভেসি পলিসিতে সম্মতি দিচ্ছেন',
+                    'প্রবেশের মাধ্যমে আপনি আমাদের টার্মস এবং ১৮+ ইউজার গাইডলাইন গ্রহণ করছেন।',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white30, fontSize: 11),
+                    style: TextStyle(color: Colors.white30, fontSize: 10.5),
                   ),
                   const SizedBox(height: 10),
                 ],
