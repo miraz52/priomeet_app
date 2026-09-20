@@ -1,0 +1,4 @@
+version:
+  revision: 3.19.6
+  channel: stable
+project_type: app
