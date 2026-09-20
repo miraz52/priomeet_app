@@ -8,22 +8,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: 'zulu'
           java-version: '17'
 
-      - name: Set up Flutter
+      - name: Setup Flutter Engine
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.6'
           channel: 'stable'
+          cache: true
 
       - name: Get Dependencies
         run: flutter pub get
@@ -31,8 +31,9 @@ jobs:
       - name: Build Release APK
         run: flutter build apk --release
 
-      - name: Upload Release APK
+      - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: priomeet-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
