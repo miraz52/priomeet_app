@@ -1,8 +1,6 @@
-import 'package:priomeet_app/user_session.dart';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:priomeet_app/screens/home_screen.dart';
+import 'package:priomeet_app/user_session.dart';
+import 'package:priomeet_app/services/telegram_service.dart';
 
 class HostEarningsScreen extends StatefulWidget {
   const HostEarningsScreen({super.key});
@@ -12,268 +10,261 @@ class HostEarningsScreen extends StatefulWidget {
 }
 
 class _HostEarningsScreenState extends State<HostEarningsScreen> {
-  int _diamonds = 450; // হোস্টের অর্জিত ডায়মন্ড
-  int _currentMessageFee = 2;
-  final TextEditingController _payoutNumberController = TextEditingController();
+  int _diamonds = 1250; // হোস্টের আর্ন করা ডায়মন্ড ব্যালেন্স
+  final double _diamondRate = 0.20; // ১ ডায়মন্ড = ২০ পয়সা (৳০.২০)
+
+  String _payoutMethod = 'bKash'; // 'bKash' or 'Nagad'
   final TextEditingController _amountController = TextEditingController();
-  String _selectedMethod = 'bKash';
-  bool _isProcessing = false;
+  final TextEditingController _numberController = TextEditingController();
+  bool _isWithdrawing = false;
 
-  final String botToken = "8940834785:AAFC0JbrhUxEi8CCzVWwai_iAKDpSTRJ2ok";
-  final String chatId = "5330021607";
+  void _requestCashout() async {
+    final amountText = _amountController.text.trim();
+    final phone = _numberController.text.trim();
 
-  Future<void> _submitWithdrawRequest() async {
-    final num = _payoutNumberController.text.trim();
-    final amtText = _amountController.text.trim();
+    final requestedDiamonds = int.tryParse(amountText) ?? 0;
 
-    if (num.length < 11 || amtText.isEmpty) {
+    if (requestedDiamonds < 500) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('সঠিক ১১ ডিজিটের নম্বর ও উইথড্র পরিমাণ লিখুন!')),
+        const SnackBar(content: Text('ন্যূনতম ৫০০ ডায়মন্ড (৳১০০ টাকা) ক্যাশআউট করতে হবে!')),
       );
       return;
     }
 
-    final amount = int.tryParse(amtText) ?? 0;
-    if (amount < 200) {
+    if (requestedDiamonds > _diamonds) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('সর্বনিম্ন ২০০ টাকা উইথড্র করা যাবে!')),
+        const SnackBar(content: Text('আপনার ব্যালেন্সে পর্যাপ্ত ডায়মন্ড নেই!')),
       );
       return;
     }
 
-    if (amount > _diamonds) {
+    if (phone.length < 11 || !phone.startsWith('01')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('আপনার অ্যাকাউন্টে পর্যাপ্ত ডায়মন্ড নেই!')),
+        const SnackBar(content: Text('সঠিক ১১ ডিজিটের বিকাশ/নগদ নম্বর দিন!')),
       );
       return;
     }
 
-    setState(() => _isProcessing = true);
+    setState(() => _isWithdrawing = true);
 
-    // টেলিগ্রামে উইথড্র নোটিফিকেশন অ্যালার্ট পাঠানো
-    final telegramMsg = "💸 *নতুন হোস্ট ক্যাশআউট রিকোয়েস্ট!*\n\n"
-        "👤 হোস্ট: ${AppUserSession.userName}\n"
-        "🆔 আইডি: `${AppUserSession.userId}`\n"
-        "💳 মাধ্যম: $_selectedMethod\n"
-        "📱 নম্বর: `$num`\n"
-        "💰 পরিমাণ: ৳$amount ($amount ডায়মন্ড)\n"
-        "⏰ সময়: ${DateTime.now().toLocal().toString().substring(0, 16)}";
+    final bdt = requestedDiamonds * _diamondRate;
 
-    try {
-      final url = Uri.parse("https://api.telegram.org/bot$botToken/sendMessage");
-      await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "chat_id": chatId,
-          "text": telegramMsg,
-          "parse_mode": "Markdown",
-        }),
-      );
+    final alertMsg = """
+<b>💸 নতুন হোস্ট ক্যাশআউট আবেদন! (PrioMeet)</b>
+--------------------------------------
+👤 হোস্টের নাম: <b>${AppUserSession.userName}</b>
+🆔 হোস্ট আইডি: <code>${AppUserSession.userId}</code>
+📞 যোগাযোগের ফোন: <code>${AppUserSession.userPhone}</code>
+💳 ক্যাশআউট মেথড: <b>$_payoutMethod</b>
+📱 ক্যাশআউট নম্বর: <code>$phone</code>
+💎 উইথড্র ডায়মন্ড: <b>$requestedDiamonds 💎</b>
+💵 প্রদেয় টাকা: <b>৳${bdt.toStringAsFixed(2)} টাকা</b>
+⏰ সময়: <b>${DateTime.now().toLocal()}</b>
+--------------------------------------
+অ্যাকাউন্ট ভেরিফাই করে টাকা পাঠিয়ে দিন।
+""";
 
-      setState(() {
-        _diamonds -= amount;
-        _isProcessing = false;
-      });
+    final success = await TelegramService.sendMessage(alertMsg);
 
-      _amountController.clear();
-      _payoutNumberController.clear();
+    setState(() => _isWithdrawing = false);
 
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        builder: (c) => AlertDialog(
-          backgroundColor: const Color(0xFF1E143A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('রিকোয়েস্ট সফল! 🎉', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          content: Text(
-            '৳$amount টাকা আপনার $_selectedMethod নম্বরে পাঠানোর আবেদন গৃহীত হয়েছে। অ্যাডমিন ভেরিফাই করে অল্প সময়ের মধ্যে টাকা পাঠাবে।',
-            style: const TextStyle(color: Colors.white70, fontSize: 13),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () => Navigator.pop(c),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF2A85)),
-              child: const Text('ঠিক আছে', style: TextStyle(color: Colors.white)),
+    if (mounted) {
+      if (success) {
+        setState(() {
+          _diamonds -= requestedDiamonds;
+        });
+        _amountController.clear();
+        _numberController.clear();
+
+        showDialog(
+          context: context,
+          builder: (c) => AlertDialog(
+            backgroundColor: const Color(0xFF1E143A),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.greenAccent),
+                SizedBox(width: 8),
+                Text('ক্যাশআউট আবেদন সফল!', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
             ),
-          ],
-        ),
-      );
-    } catch (e) {
-      if (mounted) setState(() => _isProcessing = false);
+            content: Text(
+              'আপনার ৳${bdt.toStringAsFixed(0)} টাকার ক্যাশআউট রিকোয়েস্ট অ্যাডমিন টিমের কাছে পৌঁছেছে। আগামী ১২ ঘণ্টার মধ্যে আপনার $_payoutMethod নম্বরে টাকা পৌঁছে যাবে।',
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(c),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF2A85)),
+                child: const Text('ঠিক আছে', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ইন্টারনেট সংযোগ চেক করুন অথবা সরাসরি সাপোর্টে যোগাযোগ করুন!')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentBdt = (_diamonds * _diamondRate).toStringAsFixed(0);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0818),
+      backgroundColor: const Color(0xFF07040D),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF140F27),
+        backgroundColor: const Color(0xFF160F2A),
         elevation: 0,
-        title: const Text('হোস্ট ইনকাম ও পেআউট সেন্টার', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        title: const Text('হোস্ট আর্নিং ও ক্যাশআউট 💎', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ডায়মন্ড আর্নিং কার্ড
+            // আর্নিং ব্যালেন্স কার্ড
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF8E00FF), Color(0xFFFF2A85)]),
-                borderRadius: BorderRadius.circular(20),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF8A00D4), Color(0xFF3B0068), Color(0xFF16002A)],
+                ),
+                borderRadius: BorderRadius.circular(22),
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFFFF2A85).withOpacity(0.3), blurRadius: 15, spreadRadius: 2),
+                  BoxShadow(color: const Color(0xFF8A00D4).withOpacity(0.4), blurRadius: 20, spreadRadius: 2),
                 ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('মোট আর্নিং ব্যালেন্স', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                      const SizedBox(height: 6),
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.diamond_rounded, color: Colors.cyanAccent, size: 28),
-                          const SizedBox(width: 8),
-                          Text('$_diamonds ডায়মন্ড', style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
+                          const Text('মোট ডায়মন্ড ব্যালেন্স 💎', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                          const SizedBox(height: 6),
+                          Text('$_diamonds 💎', style: const TextStyle(color: Colors.cyanAccent, fontSize: 32, fontWeight: FontWeight.w900)),
+                          const SizedBox(height: 4),
+                          Text('আনুমানিক আয়: ৳$currentBdt টাকা', style: const TextStyle(color: Colors.greenAccent, fontSize: 15, fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text('সমমূল্য: ৳$_diamonds BDT', style: const TextStyle(color: Colors.amberAccent, fontSize: 13, fontWeight: FontWeight.bold)),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), shape: BoxShape.circle),
+                        child: const Icon(Icons.diamond_rounded, color: Colors.cyanAccent, size: 40),
+                      ),
                     ],
                   ),
-                  const CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.white24,
-                    child: Icon(Icons.currency_exchange_rounded, color: Colors.white, size: 30),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // চ্যাট ফি কন্ট্রোল কার্ড
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: const Color(0xFF160F2A), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white12)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('মেসেজ প্রতি ফি নির্ধারণ করুন 💌', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                  const SizedBox(height: 4),
-                  const Text('ছেলেরা আপনাকে মেসেজ পাঠালে কত কয়েন করে আপনার অ্যাকাউন্টে জমা হবে:', style: TextStyle(color: Colors.white54, fontSize: 11.5)),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [1, 2, 3, 5].map((fee) {
-                      final isSelected = _currentMessageFee == fee;
-                      return GestureDetector(
-                        onTap: () => setState(() => _currentMessageFee = fee),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFFF2A85) : Colors.white.withOpacity(0.06),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: isSelected ? Colors.white : Colors.white24),
-                          ),
-                          child: Text('$fee কয়েন', style: TextStyle(color: Colors.white, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // বিকাশ ও নগদ ক্যাশআউট ফর্ম
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: const Color(0xFF160F2A), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white12)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('বিকাশ / নগদ ক্যাশআউট রিকোয়েস্ট', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                  const SizedBox(height: 12),
-                  Row(
+                  const Divider(color: Colors.white24, height: 26),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedMethod = 'bKash'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: _selectedMethod == 'bKash' ? const Color(0xFFE2136E) : Colors.white.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Center(child: Text('বিকাশ (bKash)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedMethod = 'Nagad'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: _selectedMethod == 'Nagad' ? const Color(0xFFF7941D) : Colors.white.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Center(child: Text('নগদ (Nagad)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                          ),
-                        ),
-                      ),
+                      Text('রেট: ১ ডায়মন্ড = ০.২০ টাকা (২০ পয়সা)', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
+                      Text('মিনিমাম: ৫০০ 💎', style: TextStyle(color: Colors.amberAccent, fontSize: 11.5, fontWeight: FontWeight.bold)),
                     ],
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: _payoutNumberController,
-                    keyboardType: TextInputType.phone,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.phone_android, color: Color(0xFFFF2A85)),
-                      hintText: 'আপনার $_selectedMethod নম্বর',
-                      hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.06),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _amountController,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.money, color: Colors.greenAccent),
-                      hintText: 'উইথড্র পরিমাণ (টাকা)',
-                      hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.06),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _isProcessing ? null : _submitWithdrawRequest,
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF2A85), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                      child: _isProcessing
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('ক্যাশআউট রিকোয়েস্ট পাঠান 💸', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                    ),
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 24),
+
+            const Text('ক্যাশআউট মেথড নির্বাচন করুন', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _payoutMethod = 'bKash'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _payoutMethod == 'bKash' ? const Color(0xFFE2136E).withOpacity(0.2) : const Color(0xFF160F2A),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _payoutMethod == 'bKash' ? const Color(0xFFE2136E) : Colors.white12, width: 2),
+                      ),
+                      child: const Center(
+                        child: Text('বিকাশ (Personal)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _payoutMethod = 'Nagad'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _payoutMethod == 'Nagad' ? const Color(0xFFF7941D).withOpacity(0.2) : const Color(0xFF160F2A),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _payoutMethod == 'Nagad' ? const Color(0xFFF7941D) : Colors.white12, width: 2),
+                      ),
+                      child: const Center(
+                        child: Text('নগদ (Personal)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+
+            const Text('ক্যাশআউট তথ্য পূরণ করুন', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: _amountController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.diamond_outlined, color: Colors.cyanAccent),
+                hintText: 'উইথড্র ডায়মন্ড পরিমাণ (যেমন: ৫০০, ১০০০)',
+                hintStyle: const TextStyle(color: Colors.white30, fontSize: 12.5),
+                filled: true,
+                fillColor: const Color(0xFF160F2A),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: _numberController,
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.phone_android_rounded, color: Color(0xFFFF2A85)),
+                hintText: 'আপনার $_payoutMethod নম্বর (01XXXXXXXXX)',
+                hintStyle: const TextStyle(color: Colors.white30, fontSize: 12.5),
+                filled: true,
+                fillColor: const Color(0xFF160F2A),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isWithdrawing ? null : _requestCashout,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF2A85),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                  elevation: 5,
+                ),
+                child: _isWithdrawing
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('ক্যাশআউট রিকোয়েস্ট পাঠান 💸', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Center(
+              child: Text('🔒 উইথড্র দেওয়ার সাথে সাথে অ্যাডমিন টেলিগ্রামে নোটিফিকেশন পৌঁছে যাবে।', style: TextStyle(color: Colors.white38, fontSize: 11)),
             ),
           ],
         ),
