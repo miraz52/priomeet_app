@@ -15,21 +15,16 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _glowAnimation;
 
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
 
     _scaleAnimation = Tween<double>(begin: 0.94, end: 1.05).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
-    );
-
-    _glowAnimation = Tween<double>(begin: 20.0, end: 45.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
     );
 
@@ -39,9 +34,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Future<void> _initializeApp() async {
     final hasInternet = await NetworkGuard.checkInternet();
     if (!hasInternet) {
-      if (mounted) {
-        NetworkGuard.showNoInternetDialog(context, _initializeApp);
-      }
+      if (mounted) NetworkGuard.showNoInternetDialog(context, _initializeApp);
       return;
     }
 
@@ -49,12 +42,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     Timer(const Duration(milliseconds: 2500), () {
       if (mounted) {
-        final bool isAlreadyRegistered = AppUserSession.userId.isNotEmpty && AppUserSession.userName.isNotEmpty;
+        final bool isRegistered = AppUserSession.userId.isNotEmpty && AppUserSession.userName.isNotEmpty;
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 600),
-            pageBuilder: (_, __, ___) => isAlreadyRegistered ? const HomeScreen() : const LoginScreen(),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+            pageBuilder: (_, __, ___) => isRegistered ? const HomeScreen() : const LoginScreen(),
+            transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
           ),
         );
       }
@@ -94,29 +87,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(36),
                         boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF2A85).withOpacity(0.55),
-                            blurRadius: _glowAnimation.value,
-                            spreadRadius: 4,
-                          ),
-                          BoxShadow(
-                            color: const Color(0xFF8A5CFF).withOpacity(0.4),
-                            blurRadius: _glowAnimation.value + 15,
-                            spreadRadius: 2,
-                          ),
+                          BoxShadow(color: const Color(0xFFFF2A85).withOpacity(0.55), blurRadius: 35, spreadRadius: 4),
                         ],
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(36),
-                        child: Image.asset('assets/icon/app_logo.png', fit: BoxFit.cover),
+                        child: Image.asset('assets/icon/app_logo.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.favorite, size: 70, color: Color(0xFFFF2A85))),
                       ),
                     ),
                   ),
                   const SizedBox(height: 35),
-                  const Text(
-                    'PrioMeet',
-                    style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: 2.5),
-                  ),
+                  const Text('PrioMeet', style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: 2.5)),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -125,17 +106,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: Colors.white12),
                     ),
-                    child: const Text(
-                      'DATE & CONNECT',
-                      style: TextStyle(color: Color(0xFFD6A4FF), fontSize: 12, letterSpacing: 3, fontWeight: FontWeight.w700),
-                    ),
+                    child: const Text('DATE & CONNECT', style: TextStyle(color: Color(0xFFD6A4FF), fontSize: 12, letterSpacing: 3, fontWeight: FontWeight.w700)),
                   ),
                   const SizedBox(height: 50),
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFFFF2A85)),
-                  ),
+                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFFFF2A85))),
                 ],
               );
             },

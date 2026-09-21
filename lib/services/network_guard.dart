@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 class NetworkGuard {
   static Future<bool> checkInternet() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    return connectivityResult != ConnectivityResult.none;
+    final res = await Connectivity().checkConnectivity();
+    return res != ConnectivityResult.none;
   }
 
   static void showNoInternetDialog(BuildContext context, VoidCallback onRetry) {
@@ -22,7 +22,7 @@ class NetworkGuard {
           ],
         ),
         content: const Text(
-          'PrioMeet একটি রিয়েল-টাইম লাইভ ভিডিও কলিং প্ল্যাটফর্ম। অ্যাপটি ব্যবহার করতে আপনার ফোনে সক্রিয় মোবাইল ডাটা বা ওয়াইফাই কানেকশন চালু করুন।',
+          'PrioMeet ব্যবহার করতে আপনার ফোনে মোবাইল ডাটা বা ওয়াইফাই কানেকশন চালু করুন।',
           style: TextStyle(color: Colors.white70, fontSize: 13),
         ),
         actions: [

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:priomeet_app/screens/auth/splash_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ),
-  );
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
   runApp(const PrioMeetApp());
 }
 
@@ -23,8 +22,8 @@ class PrioMeetApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0B0818),
-        primaryColor: const Color(0xFFFF2A85),
+        scaffoldBackgroundColor: const Color(0xFF07040D),
+        fontFamily: 'Roboto',
       ),
       home: const SplashScreen(),
     );
