@@ -6,6 +6,7 @@ class AppUserSession {
   static String userName = "";
   static String userEmail = "";
   static String userPhone = "";
+  static String userPassword = "";
   static String userReferralCode = "";
   static String referredBy = "";
   static String gender = "male";
@@ -23,6 +24,7 @@ class AppUserSession {
     userName = prefs.getString('userName') ?? "";
     userEmail = prefs.getString('userEmail') ?? "";
     userPhone = prefs.getString('userPhone') ?? "";
+    userPassword = prefs.getString('userPassword') ?? "";
     userReferralCode = prefs.getString('userReferralCode') ?? _generateReferralCode();
     referredBy = prefs.getString('referredBy') ?? "";
     gender = prefs.getString('gender') ?? "male";
@@ -47,6 +49,7 @@ class AppUserSession {
     await prefs.setString('userName', userName);
     await prefs.setString('userEmail', userEmail);
     await prefs.setString('userPhone', userPhone);
+    await prefs.setString('userPassword', userPassword);
     await prefs.setString('userReferralCode', userReferralCode);
     await prefs.setString('referredBy', referredBy);
     await prefs.setString('gender', gender);
