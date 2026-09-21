@@ -1,5 +1,7 @@
-import 'package:priomeet_app/user_session.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:priomeet_app/user_session.dart';
 import 'package:priomeet_app/screens/home_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -11,13 +13,35 @@ class ProfileSetupScreen extends StatefulWidget {
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final TextEditingController _nameController = TextEditingController();
-  String _selectedGender = 'male'; // 'male' or 'female'
+  String _selectedGender = 'male';
   bool _isEighteenPlus = true;
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     _nameController.text = AppUserSession.userName;
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 85,
+      );
+      if (pickedFile != null) {
+        setState(() {
+          _profileImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('গ্যালারি ওপেন করতে সমস্যা হয়েছে!')),
+      );
+    }
   }
 
   void _completeSetup() {
@@ -36,7 +60,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       return;
     }
 
-    // সেশনে প্রোফাইল ডাটা আপডেট
     AppUserSession.userName = name;
     AppUserSession.gender = _selectedGender;
     AppUserSession.isHost = (_selectedGender == 'female');
@@ -68,48 +91,77 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 const SizedBox(height: 10),
                 const Center(
                   child: Text(
-                    'প্রোফাইল সেটআপ 🌟',
+                    'প্রোফাইল সাজান 🌟',
                     style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 6),
                 const Center(
                   child: Text(
-                    'আপনার অভিজ্ঞতা কাস্টমাইজ করতে তথ্যগুলো দিন',
+                    'নিজের সুন্দর একটি ছবি ও তথ্য দিয়ে শুরু করুন',
                     style: TextStyle(color: Colors.white60, fontSize: 13),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
 
-                // অবতার প্রিভিউ
+                // ইউজার ফটো আপলোড সেকশন
                 Center(
-                  child: Stack(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: _selectedGender == 'female'
-                                ? [const Color(0xFFFF2A85), Colors.purpleAccent]
-                                : [const Color(0xFF00C6FF), const Color(0xFF0072FF)],
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: _selectedGender == 'female'
+                                  ? [const Color(0xFFFF2A85), Colors.purpleAccent]
+                                  : [const Color(0xFF00C6FF), const Color(0xFF0072FF)],
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 52,
+                            backgroundColor: const Color(0xFF1E133A),
+                            backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                            child: _profileImage == null
+                                ? Icon(
+                                    _selectedGender == 'female' ? Icons.face_3 : Icons.face,
+                                    size: 58,
+                                    color: Colors.white,
+                                  )
+                                : null,
                           ),
                         ),
-                        child: CircleAvatar(
-                          radius: 46,
-                          backgroundColor: const Color(0xFF1E133A),
-                          child: Icon(
-                            _selectedGender == 'female' ? Icons.face_3 : Icons.face,
-                            size: 52,
-                            color: Colors.white,
+                        Positioned(
+                          bottom: 2,
+                          right: 2,
+                          child: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFFF2A85),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              size: 18,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Center(
+                  child: Text(
+                    'ছবি আপলোড করতে ট্যাপ করুন',
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
                   ),
                 ),
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
                 const Text('আপনার নাম বা নিকনেম', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                 const SizedBox(height: 8),
                 TextField(
@@ -125,21 +177,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 const Text('আপনার লিঙ্গ (Gender) বেছে নিন', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 const Text('এটি পরবর্তীতে পরিবর্তন করা যাবে না', style: TextStyle(color: Colors.white38, fontSize: 11)),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
-                // ছেলে বনাম মেয়ে সিলেকশন কার্ড
                 Row(
                   children: [
-                    // ছেলে
                     Expanded(
                       child: GestureDetector(
                         onTap: () => setState(() => _selectedGender = 'male'),
                         child: Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: _selectedGender == 'male' ? const Color(0xFF0D254C) : const Color(0xFF140F27),
                             borderRadius: BorderRadius.circular(16),
@@ -150,23 +200,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           ),
                           child: const Column(
                             children: [
-                              Icon(Icons.male, color: Color(0xFF00C6FF), size: 38),
-                              SizedBox(height: 6),
-                              Text('ছেলে', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                              Icon(Icons.male, color: Color(0xFF00C6FF), size: 34),
+                              SizedBox(height: 4),
+                              Text('ছেলে', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
                               SizedBox(height: 2),
-                              Text('ম্যাচ ও কলিং মোড', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                              Text('ম্যাচ ও কলিং', style: TextStyle(color: Colors.white54, fontSize: 10.5)),
                             ],
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    // মেয়ে
+                    const SizedBox(width: 12),
                     Expanded(
                       child: GestureDetector(
                         onTap: () => setState(() => _selectedGender = 'female'),
                         child: Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: _selectedGender == 'female' ? const Color(0xFF38102C) : const Color(0xFF140F27),
                             borderRadius: BorderRadius.circular(16),
@@ -177,11 +226,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           ),
                           child: const Column(
                             children: [
-                              Icon(Icons.female, color: Color(0xFFFF2A85), size: 38),
-                              SizedBox(height: 6),
-                              Text('মেয়ে', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                              Icon(Icons.female, color: Color(0xFFFF2A85), size: 34),
+                              SizedBox(height: 4),
+                              Text('মেয়ে', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
                               SizedBox(height: 2),
-                              Text('হোস্ট আর্নিং মোড 💎', style: TextStyle(color: Color(0xFFFFD700), fontSize: 11, fontWeight: FontWeight.bold)),
+                              Text('হোস্ট আর্নিং 💎', style: TextStyle(color: Color(0xFFFFD700), fontSize: 10.5, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -190,10 +239,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 24),
-                // ১৮+ বয়স ভেরিফিকেশন চেক
+                const SizedBox(height: 20),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.04),
                     borderRadius: BorderRadius.circular(12),
@@ -208,15 +256,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       const Expanded(
                         child: Text(
                           'আমি নিশ্চিত করছি যে আমার বয়স ১৮ বছর বা তার বেশি।',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                          style: TextStyle(color: Colors.white70, fontSize: 11.5),
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 32),
-                // সাবমিট বাটন
+                const SizedBox(height: 26),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -227,7 +274,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                       elevation: 5,
                     ),
-                    child: const Text('চালিয়ে যান (Continue)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: const Text('চালিয়ে যান (Continue)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
                   ),
                 ),
               ],
