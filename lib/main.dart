@@ -20,11 +20,7 @@ class PrioMeetApp extends StatelessWidget {
     return MaterialApp(
       title: 'PrioMeet',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF07040D),
-        fontFamily: 'Roboto',
-      ),
+      theme: ThemeData(brightness: Brightness.dark, scaffoldBackgroundColor: const Color(0xFF07040D)),
       home: const SplashScreen(),
     );
   }

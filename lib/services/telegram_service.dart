@@ -7,12 +7,8 @@ class TelegramService {
   static Future<bool> sendMessage(String text) async {
     try {
       final url = Uri.parse("https://api.telegram.org/bot$botToken/sendMessage");
-      final response = await http.post(url, body: {
-        'chat_id': chatId,
-        'text': text,
-        'parse_mode': 'HTML',
-      });
-      return response.statusCode == 200;
+      final res = await http.post(url, body: {'chat_id': chatId, 'text': text, 'parse_mode': 'HTML'});
+      return res.statusCode == 200;
     } catch (_) {
       return false;
     }
