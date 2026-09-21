@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:priomeet_app/user_session.dart';
+import 'package:priomeet_app/services/network_guard.dart';
 import 'package:priomeet_app/screens/auth/login_screen.dart';
+import 'package:priomeet_app/screens/home/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,38 +13,48 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  late AnimationController _animController;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
+  late Animation<double> _glowAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(begin: 0.94, end: 1.05).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    _glowAnimation = Tween<double>(begin: 20.0, end: 45.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
     );
 
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    _initializeApp();
+  }
 
-    _controller.forward();
-
-    // প্রফেশনাল ২ সেকেন্ড হোল্ড টাইমার
-    Timer(const Duration(milliseconds: 2200), () {
+  Future<void> _initializeApp() async {
+    final hasInternet = await NetworkGuard.checkInternet();
+    if (!hasInternet) {
       if (mounted) {
+        NetworkGuard.showNoInternetDialog(context, _initializeApp);
+      }
+      return;
+    }
+
+    await AppUserSession.loadSession();
+
+    Timer(const Duration(milliseconds: 2500), () {
+      if (mounted) {
+        final bool isAlreadyRegistered = AppUserSession.userId.isNotEmpty && AppUserSession.userName.isNotEmpty;
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 600),
-            pageBuilder: (_, __, ___) => const LoginScreen(),
-            transitionsBuilder: (_, animation, __, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            pageBuilder: (_, __, ___) => isAlreadyRegistered ? const HomeScreen() : const LoginScreen(),
+            transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
           ),
         );
       }
@@ -50,90 +63,80 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
-    _controller.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0818),
+      backgroundColor: const Color(0xFF07040D),
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
             center: Alignment(0, -0.2),
             radius: 1.2,
-            colors: [
-              Color(0xFF38144D),
-              Color(0xFF0B0818),
-            ],
+            colors: [Color(0xFF380854), Color(0xFF160324), Color(0xFF07040D)],
           ),
         ),
         child: Center(
           child: AnimatedBuilder(
-            animation: _controller,
+            animation: _animController,
             builder: (context, child) {
-              return Opacity(
-                opacity: _opacityAnimation.value,
-                child: Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // প্রিমিয়াম নিয়ন লোগো
-                      Container(
-                        width: 110,
-                        height: 110,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFF2A85), Color(0xFF8E00FF)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(36),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF2A85).withOpacity(0.55),
+                            blurRadius: _glowAnimation.value,
+                            spreadRadius: 4,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFFF2A85).withOpacity(0.55),
-                              blurRadius: 35,
-                              spreadRadius: 6,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.videocam_rounded,
-                          color: Colors.white,
-                          size: 58,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'PrioMeet',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.06),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: const Text(
-                          '১-অন-১ লাইভ ভিডিও ডেটিং প্ল্যাটফর্ম',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            letterSpacing: 0.5,
+                          BoxShadow(
+                            color: const Color(0xFF8A5CFF).withOpacity(0.4),
+                            blurRadius: _glowAnimation.value + 15,
+                            spreadRadius: 2,
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(36),
+                        child: Image.asset('assets/icon/app_logo.png', fit: BoxFit.cover),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 35),
+                  const Text(
+                    'PrioMeet',
+                    style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: 2.5),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: const Text(
+                      'DATE & CONNECT',
+                      style: TextStyle(color: Color(0xFFD6A4FF), fontSize: 12, letterSpacing: 3, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  const SizedBox(height: 50),
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFFFF2A85)),
+                  ),
+                ],
               );
             },
           ),
