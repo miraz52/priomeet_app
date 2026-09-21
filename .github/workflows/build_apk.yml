@@ -1,4 +1,4 @@
-name: Build PrioMeet Release APK
+name: Build Release APK
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -36,4 +37,3 @@ jobs:
         with:
           name: priomeet-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 14
