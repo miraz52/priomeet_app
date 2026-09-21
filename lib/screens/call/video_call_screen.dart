@@ -35,6 +35,17 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   bool _isMuted = false;
   String? _giftAnimationText;
 
+  final List<Map<String, dynamic>> _giftCatalog = [
+    {'name': 'লাভ হার্ট', 'coins': 50, 'icon': '💖'},
+    {'name': 'ডায়মন্ড রিং', 'coins': 90, 'icon': '💍'},
+    {'name': 'গোলাপ ফুল', 'coins': 100, 'icon': '🌹'},
+    {'name': 'স্পোর্টস কার', 'coins': 200, 'icon': '🏎️'},
+    {'name': 'রয়েল ক্রাউন', 'coins': 500, 'icon': '👑'},
+    {'name': 'স্পেস রকেট', 'coins': 1000, 'icon': '🚀'},
+    {'name': 'স্বপ্নের প্রাসাদ', 'coins': 2000, 'icon': '🏰'},
+    {'name': 'লাক্সারি ইয়ট', 'coins': 5000, 'icon': '🛥️'},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -99,6 +110,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         return;
       }
       AppUserSession.coins -= 3;
+      AppUserSession.saveSession();
     }
 
     _callTimer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -110,10 +122,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
           if (_isFreeTrial) {
             _callTimer?.cancel();
             AppUserSession.completedCallsCount++;
+            if (AppUserSession.freeMatchesLeft > 0) {
+              AppUserSession.freeMatchesLeft--;
+            }
+            AppUserSession.saveSession();
             _showTrialEndedDialog();
           } else {
             if (AppUserSession.coins >= 3) {
               AppUserSession.coins -= 3;
+              AppUserSession.saveSession();
               _secondsRemaining = 60;
             } else {
               _callTimer?.cancel();
@@ -132,9 +149,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       builder: (c) => AlertDialog(
         backgroundColor: const Color(0xFF1E143A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('ফ্রি ট্রায়াল শেষ! ⏳', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Row(
+          children: [
+            Icon(Icons.hourglass_bottom_rounded, color: Colors.amberAccent),
+            SizedBox(width: 8),
+            Text('ফ্রি ট্রায়াল শেষ! ⏳', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
         content: Text(
-          'আপনার ফ্রি ট্রায়ালটি শেষ হয়েছে। কথা চালিয়ে যেতে সাশ্রয়ী কয়েন রিচার্জ করুন।\n\nবর্তমান ব্যালেন্স: ${AppUserSession.coins} কয়েন',
+          'আপনার ফ্রি ট্রায়ালটি শেষ হয়েছে। লাইভ কল চালিয়ে যেতে সাশ্রয়ী কয়েন রিচার্জ করুন।\n\nবর্তমান ব্যালেন্স: ${AppUserSession.coins} কয়েন',
           style: const TextStyle(color: Colors.white70, fontSize: 13),
         ),
         actions: [
@@ -152,7 +175,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
               Navigator.push(context, MaterialPageRoute(builder: (ctx) => const WalletScreen()));
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF2A85)),
-            child: const Text('কয়েন কিনুন 💎', style: TextStyle(color: Colors.white)),
+            child: const Text('কয়েন কিনুন 💳', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -166,9 +189,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       builder: (c) => AlertDialog(
         backgroundColor: const Color(0xFF1E143A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('কয়েন শেষ হয়ে গেছে! 💔', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Row(
+          children: [
+            Icon(Icons.monetization_on_rounded, color: Colors.redAccent),
+            SizedBox(width: 8),
+            Text('কয়েন শেষ হয়ে গেছে! 💔', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
         content: const Text(
-          'ভিডিও কল চালিয়ে যেতে প্রতি মিনিটে ৩টি কয়েন প্রয়োজন। এখনই রিচার্জ করে লাইভ থাকুন।',
+          'ভিডিও কল চালিয়ে যেতে প্রতি মিনিটে ৩টি কয়েন প্রয়োজন। এখনই কয়েন রিচার্জ করে প্রিয় মানুষের সাথে সরাসরি কথা চালিয়ে যান।',
           style: TextStyle(color: Colors.white70, fontSize: 13),
         ),
         actions: [
@@ -188,16 +217,115 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   void _sendGift(String name, int cost, String icon) {
     if (AppUserSession.coins < cost) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$name পাঠাতে $cost কয়েন লাগবে!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$name উপহার পাঠাতে $cost কয়েন প্রয়োজন! আপনার ওয়ালেটে কয়েন কম আছে।'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
       return;
     }
     setState(() {
       AppUserSession.coins -= cost;
-      _giftAnimationText = "আপনি $icon $name পাঠিয়েছেন!";
+      AppUserSession.saveSession();
+      _giftAnimationText = "আপনি $icon $name পাঠিয়েছেন! (-$cost কয়েন)";
     });
-    Future.delayed(const Duration(milliseconds: 1800), () {
+    Future.delayed(const Duration(milliseconds: 2200), () {
       if (mounted) setState(() => _giftAnimationText = null);
     });
+  }
+
+  void _openGiftsSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF150E28),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          height: 380,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('প্রিমিয়াম উপহার বক্স 🎁', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset('assets/images/coin_logo.png', width: 18, height: 18, errorBuilder: (_, __, ___) => const Icon(Icons.monetization_on, color: Color(0xFFFFCC00), size: 16)),
+                        const SizedBox(width: 5),
+                        Text('${AppUserSession.coins}', style: const TextStyle(color: Colors.amberAccent, fontSize: 13, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.78,
+                  ),
+                  itemCount: _giftCatalog.length,
+                  itemBuilder: (context, i) {
+                    final gift = _giftCatalog[i];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _sendGift(gift['name'] as String, gift['coins'] as int, gift['icon'] as String);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF22163E),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withOpacity(0.08)),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(gift['icon'] as String, style: const TextStyle(fontSize: 28)),
+                            const SizedBox(height: 4),
+                            Text(
+                              gift['name'] as String,
+                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 3),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.asset('assets/images/coin_logo.png', width: 12, height: 12, errorBuilder: (_, __, ___) => const Icon(Icons.monetization_on, color: Color(0xFFFFCC00), size: 10)),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '${gift['coins']}',
+                                  style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -215,7 +343,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // রিমোট ব্যবহারকারীর আসল Agora ভিডিও ফিড
           Center(
             child: _remoteUid != null
                 ? AgoraVideoView(
@@ -231,16 +358,16 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                       const CircularProgressIndicator(color: Color(0xFFFF2A85)),
                       const SizedBox(height: 16),
                       Text(
-                        '${widget.remoteUserName}-এর সাথে যুক্ত হচ্ছে...',
+                        '${widget.remoteUserName}-এর সাথে লাইভ যুক্ত হচ্ছে...',
                         style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 6),
-                      const Text('ক্যামেরা চালু হচ্ছে', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                      const Text('ক্যামেরা ও অডিও চালু হচ্ছে', style: TextStyle(color: Colors.white54, fontSize: 12)),
                     ],
                   ),
           ),
 
-          // নিজের সেলফ পিআইপি ক্যামেরা ভিউ
+          // সেলফ পিআইপি ক্যামেরা ভিউ
           Positioned(
             top: 50,
             right: 16,
@@ -266,24 +393,31 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             ),
           ),
 
-          // টাইমার
+          // কল টাইমার ও কয়েন ব্যালেন্স
           Positioned(
             top: 50,
             left: 16,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withOpacity(0.65),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: _isFreeTrial ? Colors.greenAccent : Colors.amberAccent),
               ),
               child: Row(
                 children: [
-                  Icon(_isFreeTrial ? Icons.timer_outlined : Icons.monetization_on, color: _isFreeTrial ? Colors.greenAccent : Colors.amberAccent, size: 16),
+                  if (_isFreeTrial)
+                    const Icon(Icons.timer_outlined, color: Colors.greenAccent, size: 16)
+                  else
+                    Image.asset('assets/images/coin_logo.png', width: 16, height: 16, errorBuilder: (_, __, ___) => const Icon(Icons.monetization_on, color: Color(0xFFFFCC00), size: 16)),
                   const SizedBox(width: 6),
                   Text(
                     _isFreeTrial ? 'ফ্রি ট্রায়াল: $_secondsRemaining সে.' : 'পেইড: $_secondsRemaining সে. (৩ কয়েন/মি.)',
-                    style: TextStyle(color: _isFreeTrial ? Colors.greenAccent : Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: _isFreeTrial ? Colors.greenAccent : Colors.amberAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -297,12 +431,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(colors: [Color(0xFFFF2A85), Color(0xFF8E00FF)]),
                   borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFFFF2A85).withOpacity(0.6), blurRadius: 25, spreadRadius: 4),
+                  ],
                 ),
-                child: Text(_giftAnimationText!, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text(_giftAnimationText!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
 
-          // কন্ট্রোল বাটন
+          // কল বাটন ও গিফট বাটন
           Positioned(
             bottom: 30,
             left: 0,
@@ -326,7 +463,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                   backgroundColor: Colors.amber.withOpacity(0.25),
                   child: IconButton(
                     icon: const Icon(Icons.card_giftcard_rounded, color: Colors.amberAccent, size: 28),
-                    onPressed: () => _sendGift('গোলাপ', 1, '🌹'),
+                    onPressed: _openGiftsSheet,
                   ),
                 ),
                 CircleAvatar(
@@ -344,7 +481,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                     icon: const Icon(Icons.call_end_rounded, color: Colors.white, size: 28),
                     onPressed: () {
                       _callTimer?.cancel();
-                      AppUserSession.completedCallsCount++;
+                      if (_isFreeTrial) {
+                        AppUserSession.completedCallsCount++;
+                        if (AppUserSession.freeMatchesLeft > 0) {
+                          AppUserSession.freeMatchesLeft--;
+                        }
+                        AppUserSession.saveSession();
+                      }
                       Navigator.pop(context);
                     },
                   ),
