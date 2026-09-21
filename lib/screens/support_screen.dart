@@ -2,7 +2,7 @@ import 'package:priomeet_app/user_session.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:priomeet_app/screens/home_screen.dart';
+import 'package:priomeet_app/screens/home/home_screen.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});

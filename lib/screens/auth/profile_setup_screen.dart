@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:priomeet_app/user_session.dart';
-import 'package:priomeet_app/screens/home_screen.dart';
+import 'package:priomeet_app/screens/home/home_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
