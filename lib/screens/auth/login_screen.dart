@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:priomeet_app/user_session.dart';
-import 'package:priomeet_app/services/network_guard.dart';
 import 'package:priomeet_app/services/firebase_service.dart';
 import 'package:priomeet_app/screens/auth/profile_setup_screen.dart';
 
@@ -17,25 +16,19 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _referralController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _handleRegistration() async {
-    final hasNet = await NetworkGuard.checkInternet();
-    if (!hasNet) {
-      if (mounted) NetworkGuard.showNoInternetDialog(context, _handleRegistration);
-      return;
-    }
-
+  void _handleRegistration() async {
     final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
     final refCode = _referralController.text.trim();
 
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+    if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('অনুগ্রহ করে সঠিক Gmail / ইমেইল ঠিকানা দিন!')),
+        const SnackBar(content: Text('অনুগ্রহ করে সঠিক Gmail বা ইমেইল লিখুন!')),
       );
       return;
     }
 
-    if (phone.length < 11 || !phone.startsWith('01')) {
+    if (phone.length < 11) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)!')),
       );
@@ -44,24 +37,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
+    // লোকাল সেশনে ডাটা সংরক্ষণ
     AppUserSession.userEmail = email;
     AppUserSession.userPhone = phone;
     AppUserSession.userId = phone;
-    AppUserSession.coins = 5;
-
-    if (refCode.isNotEmpty) {
-      final success = await FirebaseService.applyReferralCode(refCode);
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('🎉 রেফারেল কোড সফল! বোনাস ১০ কয়েন যুক্ত হয়েছে!')),
-        );
-      }
+    AppUserSession.coins = (AppUserSession.coins > 0) ? AppUserSession.coins : 15; // ওয়েলকাম কয়েন
+    if (AppUserSession.userName.isEmpty) {
+      AppUserSession.userName = "Prio_${phone.substring(phone.length - 4)}";
     }
 
+    // ব্যাকগ্রাউন্ডে ফায়ারবেসে সিঙ্ক এবং রেফারেল কোড চেক (অপেক্ষা না করেই স্ক্রিন ফরোয়ার্ড)
+    try {
+      if (refCode.isNotEmpty) {
+        FirebaseService.applyReferralCode(refCode);
+      }
+      FirebaseService.syncUserProfile();
+    } catch (_) {}
+
     await AppUserSession.saveSession();
-    setState(() => _isLoading = false);
 
     if (mounted) {
+      setState(() => _isLoading = false);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (c) => const ProfileSetupScreen()),
@@ -99,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
-                    child: Image.asset('assets/icon/app_logo.png', fit: BoxFit.cover),
+                    child: Image.asset('assets/icon/app_logo.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.favorite, color: Colors.white, size: 40)),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -196,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('🔒 প্রতিটি অ্যাকাউন্ট ফায়ারবেস ক্লাউড সিকিউরিটি দিয়ে সুরক্ষিত।', textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, fontSize: 11.5)),
+                const Text('🔒 প্রতিটি অ্যাকাউন্ট সুরক্ষিতভাবে সংরক্ষিত থাকে।', textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, fontSize: 11.5)),
               ],
             ),
           ),
